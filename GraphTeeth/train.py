@@ -82,10 +82,7 @@ def val(model, val_loader, device):
             preds, targets = cocoeval.format(outputs, targets)
             cocoeval.update(preds, targets)
 
-
-    root = conf.dataset_path
-    annFile = os.path.join(root, "annotations/instances_val.json")
-    mAP_50 = cocoeval.compute(annFile)
+    mAP_50 = cocoeval.compute()
     print(mAP_50)
     return mAP_50             
         
