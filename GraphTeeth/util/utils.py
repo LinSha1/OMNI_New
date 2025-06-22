@@ -189,6 +189,7 @@ class CustomCOCOeval:
         else:
             coco_gt = COCO()  # 初始化 ground truth
             coco_gt.dataset = self.all_ground_truth
+            coco_gt.dataset['info'] = {'contributor': 'Lin', 'description': 'Teeth detection dataset', 'version': '1.0', 'year': 2025}
         coco_gt.createIndex()
         coco_dt = coco_gt.loadRes(self.all_detections)
         coco_eval = COCOeval(coco_gt, coco_dt, iouType='bbox')

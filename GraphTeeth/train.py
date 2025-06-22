@@ -81,7 +81,6 @@ def val(model, val_loader, device):
             outputs = model(images)            
             preds, targets = cocoeval.format(outputs, targets)
             cocoeval.update(preds, targets)
-
     mAP_50 = cocoeval.compute()
     print(mAP_50)
     return mAP_50             
