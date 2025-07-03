@@ -176,3 +176,9 @@ def set_logger(cfg):
 
     logging.info(print_conf(cfg))
     logging.info('writting logs to file {}'.format(log_path))
+
+
+def get_path():
+    root = r"D:\MScPro\OMNI_New\data\OMNI_COCO\testdata\train"
+    annFile = r"D:\MScPro\OMNI_New\data\OMNI_COCO\testdata\annotations\instances_train.json"
+    return root,annFile
