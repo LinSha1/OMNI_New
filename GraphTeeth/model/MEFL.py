@@ -172,21 +172,21 @@ class Head(nn.Module):
     def forward(self, global_features, box_features):
         batch_size = global_features.shape[0]
 
-        print(f"Debug - Global features shape: {global_features.shape}")
-        print(f"Debug - Box features shape: {box_features.shape}")
+        # print(f"Debug - Global features shape: {global_features.shape}")
+        # print(f"Debug - Box features shape: {box_features.shape}")
 
         # Handle the 3D case: [150, 49, 512] -> [batch, proposals, spatial, channels]
         total_proposals, spatial_features, channels = box_features.shape
         num_proposals_per_batch = total_proposals // batch_size
 
-        print(f"Debug - {total_proposals} proposals, {num_proposals_per_batch} per batch, {channels} channels")
+        # print(f"Debug - {total_proposals} proposals, {num_proposals_per_batch} per batch, {channels} channels")
 
         # Reshape to [batch, num_proposals, spatial_features, channels]
         box_features = box_features.view(batch_size, num_proposals_per_batch, spatial_features, channels)
 
         # For node features: average pool spatial dimension to get [batch, num_proposals, channels]
         f_v = box_features.mean(dim=2)
-        print(f"Debug - Node features (f_v) shape: {f_v.shape}")
+        # print(f"Debug - Node features (f_v) shape: {f_v.shape}")
 
         # Simple approach: create dummy edge features that match the expected dimensions
         # The GNN expects f_e to have shape [batch, num_edges, channels]
@@ -203,12 +203,12 @@ class Head(nn.Module):
         edge_features = f_v_i - f_v_j  # [batch, proposals, proposals, channels]
         f_e = edge_features.view(batch_size, num_edges, channels)  # [batch, num_edges, channels]
 
-        print(f"Debug - Edge features (f_e) shape: {f_e.shape}")
+        # print(f"Debug - Edge features (f_e) shape: {f_e.shape}")
 
         # Apply GNN
         f_v, f_e = self.gnn(f_v, f_e)
 
-        print(f"Debug - After GNN - f_v: {f_v.shape}, f_e: {f_e.shape}")
+        # print(f"Debug - After GNN - f_v: {f_v.shape}, f_e: {f_e.shape}")
 
         # Classification logits
         cl = self.fc(f_v.view(-1, f_v.size(2)))

@@ -37,7 +37,7 @@ class GraphPredictor(nn.Module):
         # Apply box head transformation for bbox regression
         processed_box_features = self.box_head(box_features)
 
-        print(f"After box_head - Box features: {processed_box_features.shape}")
+        # print(f"After box_head - Box features: {processed_box_features.shape}")
 
         # Flatten for bbox regression
         if processed_box_features.dim() == 4:
@@ -47,7 +47,7 @@ class GraphPredictor(nn.Module):
             )
         flattened_box_features = processed_box_features.flatten(start_dim=1)
 
-        print(f"Flattened box features: {flattened_box_features.shape}")
+        # print(f"Flattened box features: {flattened_box_features.shape}")
 
         # For MEFARG: use original features (rich spatial info)
         mefarg_input = (global_features, original_box_features)
@@ -57,15 +57,15 @@ class GraphPredictor(nn.Module):
         # For Fast R-CNN loss, we only need the classification logits
         if isinstance(mefarg_output, tuple):
             scores, contrastive_embeddings = mefarg_output
-            print(f"MEFARG output - Scores: {scores.shape}, Embeddings: {contrastive_embeddings.shape}")
+            # print(f"MEFARG output - Scores: {scores.shape}, Embeddings: {contrastive_embeddings.shape}")
         else:
             scores = mefarg_output
-            print(f"MEFARG output - Scores: {scores.shape}")
+            # print(f"MEFARG output - Scores: {scores.shape}")
 
         # For bbox regression: use processed + flattened features
         bbox_deltas = self.bbox_pred(flattened_box_features)
 
-        print(f"Final output - Scores: {scores.shape}, BBox deltas: {bbox_deltas.shape}")
+        # print(f"Final output - Scores: {scores.shape}, BBox deltas: {bbox_deltas.shape}")
 
         return scores, bbox_deltas
   
