@@ -29,7 +29,7 @@ class GraphPredictor(nn.Module):
     def forward(self, x):
         global_features, box_features = x
 
-        print(f"GraphPredictor input - Global: {type(global_features)}, Box: {box_features.shape}")
+        # print(f"GraphPredictor input - Global: {type(global_features)}, Box: {box_features.shape}")
 
         # Store original box features for MEFARG (graph network)
         original_box_features = box_features.clone()
