@@ -142,7 +142,7 @@ def main(conf):
     model = GraphTeeth(conf.num_classes, conf.num_proposals, conf.arc)
 
     # ─── Load contrastively pretrained backbone ───
-    backbone_ckpt = "backbone_contrastive2.pth"
+    backbone_ckpt = "backbone_contrastive.pth"
     load_contrastive_weights(model, backbone_ckpt, device)
 
     # resume

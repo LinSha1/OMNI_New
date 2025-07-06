@@ -7,6 +7,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchvision.models import resnet34
 
+import conf
 # Import your contrastive dataset and collate_fn
 from dataset import OMNIDataset, contrastive_transform, collate_fn
 
@@ -63,9 +64,11 @@ class ContrastiveResNet(nn.Module):
 # ---------------- Main ----------------
 def main():
     # 1. Dataset & DataLoader
+
+    root,annFile = conf.get_path()
     dataset = OMNIDataset(
-        root=r"D:\MScPro\OMNI_New\data\OMNI_COCO\testdata\train",
-        annFile=r"D:\MScPro\OMNI_New\data\OMNI_COCO\testdata\annotations\instances_train.json",
+        root=root,
+        annFile=annFile,
         train=True,
         contrastive=True,
         pair_transform=contrastive_transform
@@ -106,7 +109,7 @@ def main():
         print(f"Epoch {epoch:03d} | Contrastive Loss: {avg_loss:.4f}")
 
     # 4. Save pretrained backbone weights
-    torch.save(model.backbone.state_dict(), "backbone_contrastive2.pth")
+    torch.save(model.backbone.state_dict(), "backbone_contrastive.pth")
     print("Saved contrastively pretrained backbone to backbone_contrastive.pth")
 
 
