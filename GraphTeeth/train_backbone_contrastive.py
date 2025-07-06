@@ -75,7 +75,7 @@ def main():
     )
     loader = DataLoader(
         dataset,
-        batch_size=2,
+        batch_size=6,
         shuffle=True,
         num_workers=4,
         collate_fn=collate_fn
