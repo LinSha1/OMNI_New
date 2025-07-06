@@ -28,16 +28,44 @@ class GraphPredictor(nn.Module):
 
     def forward(self, x):
         global_features, box_features = x
-        box_features = self.box_head(box_features)
-        if box_features.dim() == 4:
+
+        print(f"GraphPredictor input - Global: {type(global_features)}, Box: {box_features.shape}")
+
+        # Store original box features for MEFARG (graph network)
+        original_box_features = box_features.clone()
+
+        # Apply box head transformation for bbox regression
+        processed_box_features = self.box_head(box_features)
+
+        print(f"After box_head - Box features: {processed_box_features.shape}")
+
+        # Flatten for bbox regression
+        if processed_box_features.dim() == 4:
             torch._assert(
-                list(box_features.shape[2:]) == [1, 1],
-                f"box_features has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(box_features.shape[2:])}",
+                list(processed_box_features.shape[2:]) == [1, 1],
+                f"box_features has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(processed_box_features.shape[2:])}",
             )
-        box_features = box_features.flatten(start_dim=1)
-        
-        scores = self.cls_score(x)
-        bbox_deltas = self.bbox_pred(box_features)
+        flattened_box_features = processed_box_features.flatten(start_dim=1)
+
+        print(f"Flattened box features: {flattened_box_features.shape}")
+
+        # For MEFARG: use original features (rich spatial info)
+        mefarg_input = (global_features, original_box_features)
+        mefarg_output = self.cls_score(mefarg_input)
+
+        # MEFARG returns (classification_logits, contrastive_embeddings)
+        # For Fast R-CNN loss, we only need the classification logits
+        if isinstance(mefarg_output, tuple):
+            scores, contrastive_embeddings = mefarg_output
+            print(f"MEFARG output - Scores: {scores.shape}, Embeddings: {contrastive_embeddings.shape}")
+        else:
+            scores = mefarg_output
+            print(f"MEFARG output - Scores: {scores.shape}")
+
+        # For bbox regression: use processed + flattened features
+        bbox_deltas = self.bbox_pred(flattened_box_features)
+
+        print(f"Final output - Scores: {scores.shape}, BBox deltas: {bbox_deltas.shape}")
 
         return scores, bbox_deltas
   
@@ -55,7 +83,6 @@ class GraphTeeth(nn.Module):
             num_classes=num_classes,  
             rpn_post_nms_top_n_test=num_proposals  
         )
-        
         in_features = self.faster_rcnn.roi_heads.box_predictor.cls_score.in_features
         box_predictor = GraphPredictor(in_features, self.faster_rcnn.roi_heads.box_head, num_classes, num_node=num_proposals)
         roi_heads = RoIHeads(

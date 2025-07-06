@@ -171,23 +171,53 @@ class Head(nn.Module):
 
     def forward(self, global_features, box_features):
         batch_size = global_features.shape[0]
-        box_features = box_features.view(
-            batch_size,
-            box_features.size(1) // batch_size,
-            box_features.size(2),
-            box_features.size(3)
-        )
-        f_e = self.edge_extractor(box_features, global_features)
-        f_v = box_features.mean(dim=-2)
-        f_e = f_e.mean(dim=-2)
+
+        print(f"Debug - Global features shape: {global_features.shape}")
+        print(f"Debug - Box features shape: {box_features.shape}")
+
+        # Handle the 3D case: [150, 49, 512] -> [batch, proposals, spatial, channels]
+        total_proposals, spatial_features, channels = box_features.shape
+        num_proposals_per_batch = total_proposals // batch_size
+
+        print(f"Debug - {total_proposals} proposals, {num_proposals_per_batch} per batch, {channels} channels")
+
+        # Reshape to [batch, num_proposals, spatial_features, channels]
+        box_features = box_features.view(batch_size, num_proposals_per_batch, spatial_features, channels)
+
+        # For node features: average pool spatial dimension to get [batch, num_proposals, channels]
+        f_v = box_features.mean(dim=2)
+        print(f"Debug - Node features (f_v) shape: {f_v.shape}")
+
+        # Simple approach: create dummy edge features that match the expected dimensions
+        # The GNN expects f_e to have shape [batch, num_edges, channels]
+        # For a fully connected graph with num_proposals nodes, we have num_proposals^2 edges
+        num_edges = num_proposals_per_batch * num_proposals_per_batch
+
+        # Create edge features by computing pairwise differences or similarities
+        # Expand f_v to compute pairwise relationships
+        f_v_i = f_v.unsqueeze(2).repeat(1, 1, num_proposals_per_batch, 1)  # [batch, proposals, proposals, channels]
+        f_v_j = f_v.unsqueeze(1).repeat(1, num_proposals_per_batch, 1, 1)  # [batch, proposals, proposals, channels]
+
+        # Simple edge features: concatenate or difference
+        # Using difference for now (could also use concatenation or dot product)
+        edge_features = f_v_i - f_v_j  # [batch, proposals, proposals, channels]
+        f_e = edge_features.view(batch_size, num_edges, channels)  # [batch, num_edges, channels]
+
+        print(f"Debug - Edge features (f_e) shape: {f_e.shape}")
+
+        # Apply GNN
         f_v, f_e = self.gnn(f_v, f_e)
 
-        # classification logits
+        print(f"Debug - After GNN - f_v: {f_v.shape}, f_e: {f_e.shape}")
+
+        # Classification logits
         cl = self.fc(f_v.view(-1, f_v.size(2)))
-        # contrastive embeddings
+
+        # Contrastive embeddings
         node_feats = f_v.view(-1, f_v.size(2))  # [B*num_node, C]
-        z = self.proj_head(node_feats)          # [B*num_node, 128]
+        z = self.proj_head(node_feats)  # [B*num_node, 128]
         z = F.normalize(z, dim=1)
+
         return cl, z
 
 
